@@ -31,7 +31,7 @@ Vagrant.configure(2) do |config|
         File::RDONLY
       ).read
     )
-    _conf.merge!(_site) if _site.is_a?(Hash)
+    _conf.merge!(_site) if _site.is_a?(Hash)  
   end
 
   if File.exists?(_conf['chef_cookbook_path'])
@@ -49,7 +49,9 @@ Vagrant.configure(2) do |config|
   config.vm.box_check_update = true
 
   config.vm.hostname = _conf['hostname']
-  config.vm.network :private_network, ip: _conf['ip']
+  #config.vm.network :private_network, ip: _conf['ip']
+  config.vm.network "public_network", bridge: 'Intel(R) 82579V Gigabit Network Connection'
+  #config.vm.network "forwarded_port", guest: 80, host: 8080
 
   config.vm.synced_folder ".", "/vagrant", :mount_options => ['dmode=755', 'fmode=644']
   config.vm.synced_folder _conf['sync_folder'], _conf['document_root'], :create => "true", :mount_options => ['dmode=755', 'fmode=644']
@@ -95,7 +97,7 @@ Vagrant.configure(2) do |config|
             'default_charset'            => 'UTF-8',
             'mbstring.language'          => 'neutral',
             'mbstring.internal_encoding' => 'UTF-8',
-            'date.timezone'              => 'UTC',
+            'date.timezone'              => 'Asia/Taipei',
             'short_open_tag'             => 'Off',
             'session.save_path'          => '/tmp'
         }
