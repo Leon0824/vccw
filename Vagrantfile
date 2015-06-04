@@ -7,6 +7,8 @@ Vagrant.require_version '>= 1.5'
 
 Vagrant.configure(2) do |config|
 
+  vccw_version = '2.8.2';
+
   _conf = YAML.load(
     File.open(
       File.join(File.dirname(__FILE__), 'provision/default.yml'),
@@ -60,12 +62,18 @@ Vagrant.configure(2) do |config|
     config.hostsupdater.remove_on_suspend = true
   end
 
+  if Vagrant.has_plugin?('vagrant-vbguest')
+    config.vbguest.auto_update = false
+  end
+
   config.vm.provider :virtualbox do |vb|
-    vb.customize [
-      'modifyvm', :id,
-      '--natdnsproxy1', 'on',
-      '--natdnshostresolver1', 'on'
-    ]
+    vb.memory = _conf['memory'].to_i
+    vb.cpus = _conf['cpus'].to_i
+    if 1 < _conf['cpus'].to_i
+      vb.customize ['modifyvm', :id, '--ioapic', 'on']
+    end
+    vb.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
+    vb.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
   end
 
   if 'miya0001/vccw' != config.vm.box && 'provision' != ARGV[0]
@@ -87,8 +95,8 @@ Vagrant.configure(2) do |config|
     chef.json = {
       :apache => {
         :docroot_dir  => _conf['document_root'],
-        :user         => 'vagrant',
-        :group        => 'vagrant',
+        :user         => _conf['user'],
+        :group        => _conf['group'],
         :listen_ports => ['80', '443']
       },
       :php => {
@@ -109,6 +117,8 @@ Vagrant.configure(2) do |config|
         :server_repl_password   => 'wordpress'
       },
       'wpcli' => {
+        :user              => _conf['user'],
+        :group              => _conf['group'],
         :wp_version        => ENV['wp_version'] || _conf['version'],
         :wp_host           => _conf['hostname'],
         :wp_home           => _conf['wp_home'],
@@ -135,6 +145,9 @@ Vagrant.configure(2) do |config|
         :rewrite_structure => _conf['rewrite_structure']
       },
       :vccw => {
+        :version           => vccw_version,
+        :user              => _conf['user'],
+        :group              => _conf['group'],
         :wordmove => {
           :movefile        => File.join('/vagrant', 'Movefile'),
           :url             => 'http://' << File.join(_conf['hostname'], _conf['wp_home']),
@@ -164,17 +177,11 @@ Vagrant.configure(2) do |config|
       }
     }
 
-    chef.add_recipe 'yum::remi'
-    chef.add_recipe 'iptables'
-    chef.add_recipe 'apache2'
-    chef.add_recipe 'apache2::mod_php5'
-    chef.add_recipe 'apache2::mod_ssl'
-    chef.add_recipe 'mysql::server'
-    chef.add_recipe 'mysql::ruby'
-    chef.add_recipe 'php::package'
     chef.add_recipe 'wpcli'
     chef.add_recipe 'wpcli::install'
-    chef.add_recipe 'vccw'
+    if true != _conf['disable_vccw_cookbook']
+      chef.add_recipe 'vccw'
+    end
 
   end
 
