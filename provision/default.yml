@@ -16,7 +16,7 @@ cpus: 1
 #
 # Network Settings
 #
-hostname: wordpress.local
+hostname: vccw.dev
 ip: 192.168.33.10
 sync_folder: 'www/wordpress'
 
@@ -100,3 +100,9 @@ disable_vccw_cookbook: false
 #
 user: vagrant
 group: vagrant
+
+
+#
+# phpenv
+#
+php_version: default
